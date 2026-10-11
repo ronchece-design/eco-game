@@ -14,17 +14,27 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
+        /* Переменные тем оформления */
         :root {
             --primary: #10b981;
             --primary-hover: #059669;
             --danger: #ef4444;
             --danger-hover: #dc2626;
-            --bg-dark: #0f172a;
+            --bg: #f8fafc;
             --surface: #ffffff;
             --text: #1e293b;
             --text-light: #64748b;
-            --radius: 16px;
+            --border: #e2e8f0;
             --shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-light: #94a3b8;
+            --border: #334155;
+            --shadow: 0 20px 25px -5px rgba(0,0,0,0.4);
         }
 
         * {
@@ -33,10 +43,11 @@
             padding: 0;
             font-family: 'Inter', system-ui, sans-serif;
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
 
         body {
-            background-color: #f8fafc;
+            background-color: var(--bg);
             color: var(--text);
             height: 100vh;
             display: flex;
@@ -48,7 +59,7 @@
         #auth-screen {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
             display: flex;
             justify-content: center;
@@ -75,13 +86,13 @@
 
         /* Шапка */
         header {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--surface);
             backdrop-filter: blur(10px);
             padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border);
             z-index: 1000;
         }
 
@@ -91,13 +102,33 @@
             gap: 8px;
             font-weight: 700;
             font-size: 18px;
-            color: #065f46;
+            color: var(--primary);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Кнопка смены темы */
+        .theme-btn {
+            background: var(--border);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
         }
 
         /* Вкладки */
         .tabs {
             display: flex;
-            background: #f1f5f9;
+            background: var(--border);
             padding: 4px;
             border-radius: 12px;
             gap: 4px;
@@ -117,7 +148,7 @@
 
         .tab-btn.active {
             background: var(--surface);
-            color: var(--primary-hover);
+            color: var(--primary);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
@@ -133,7 +164,7 @@
             flex-direction: column;
         }
 
-        #map {
+        #map, #admin-map {
             width: 100%;
             height: 100%;
         }
@@ -147,12 +178,12 @@
             width: calc(100% - 32px);
             max-width: 480px;
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.92);
+            background: var(--surface);
             backdrop-filter: blur(16px);
             padding: 20px;
             border-radius: 20px;
             box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -161,7 +192,7 @@
         /* Админка контейнер */
         .admin-container {
             padding: 24px;
-            max-width: 640px;
+            max-width: 680px;
             margin: 0 auto;
             width: 100%;
             overflow-y: auto;
@@ -175,14 +206,14 @@
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
+            border: 1px solid var(--border);
         }
 
         .card h3 {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 12px;
-            color: #0f172a;
+            color: var(--text);
         }
 
         /* Формы и кнопки */
@@ -190,11 +221,12 @@
             width: 100%;
             padding: 12px 16px;
             margin: 6px 0 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
             border-radius: 10px;
             font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
         }
 
         input:focus, textarea:focus {
@@ -212,21 +244,39 @@
             width: 100%;
             font-size: 14px;
             font-weight: 600;
-            transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+            transition: transform 0.1s;
         }
 
         .btn:hover {
             background: var(--primary-hover);
         }
 
-        .btn-sos {
-            background: var(--danger);
-            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        .btn:active {
+            transform: scale(0.98);
         }
 
+        .btn-sos {
+            background: var(--danger);
+        }
         .btn-sos:hover {
             background: var(--danger-hover);
+        }
+
+        .btn-mic {
+            background: #8b5cf6;
+        }
+        .btn-mic:hover {
+            background: #7c3aed;
+        }
+        .btn-mic.recording {
+            background: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
         }
 
         #timer-display {
@@ -234,22 +284,21 @@
             font-weight: 700;
             color: #ef4444;
             text-align: center;
-            letter-spacing: -1px;
         }
 
         .notification {
-            background: #fef3c7;
-            border: 1px solid #fcd34d;
-            color: #92400e;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #d97706;
             padding: 12px;
             border-radius: 10px;
             font-size: 13px;
         }
 
         .alert-box {
-            background: #fef2f2;
-            border: 1px solid #fca5a5;
-            color: #991b1b;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
             padding: 12px;
             border-radius: 10px;
             font-size: 13px;
@@ -258,15 +307,15 @@
 
         #user-badge {
             font-size: 13px;
-            background: #e2e8f0;
-            color: #334155;
+            background: var(--border);
+            color: var(--text);
             padding: 6px 12px;
             border-radius: 20px;
             font-weight: 500;
         }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
     <!-- ВХОД -->
     <div id="auth-screen">
@@ -285,7 +334,10 @@
             <button class="tab-btn active" onclick="switchTab('player-tab', this)">🎮 Игрок</button>
             <button class="tab-btn" onclick="openAdminTab(this)">⚙️ Админка 🔒</button>
         </div>
-        <span id="user-badge" style="display:none;"></span>
+        <div class="header-controls">
+            <span id="user-badge" style="display:none;"></span>
+            <button class="theme-btn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+        </div>
     </header>
 
     <!-- ВКЛАДКА ИГРОКА -->
@@ -304,12 +356,27 @@
     <!-- ВКЛАДКА АДМИНА -->
     <div id="admin-tab" class="tab-content">
         <div class="admin-container">
+            <!-- ЖИВАЯ КАРТА УЧАСТНИКОВ ДЛЯ АДМИНА -->
+            <div class="card">
+                <h3>🗺️ Live-карта участников</h3>
+                <div style="width: 100%; height: 300px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border);">
+                    <div id="admin-map" style="width:100%; height:100%;"></div>
+                </div>
+            </div>
+
             <!-- ДИСПЕТЧЕР ТРЕВОГ -->
             <div class="card" style="border-left: 4px solid var(--danger);">
                 <h3 style="color: var(--danger);">🚨 Тревоги и Нарушения Зоны</h3>
                 <div id="admin-alerts">
                     <p style="color: var(--text-light); font-size: 13px;">Активных тревог нет</p>
                 </div>
+            </div>
+
+            <!-- ГОЛОСОВАЯ РАЦИЯ АДМИНА -->
+            <div class="card">
+                <h3>🎙️ Голосовая Рация (Микрофон)</h3>
+                <p style="color: var(--text-light); font-size: 13px; margin-bottom: 10px;">Запишите голосовое сообщение для всех участников игры:</p>
+                <button class="btn btn-mic" id="mic-btn" onclick="toggleRecording()">🎤 Нажмите для записи голоса</button>
             </div>
 
             <div class="card">
@@ -319,8 +386,8 @@
             </div>
 
             <div class="card">
-                <h3>📢 Массовое Оповещение</h3>
-                <textarea id="notif-text" rows="3" placeholder="Введите сообщение участникам..."></textarea>
+                <h3>📢 Текстовое Оповещение</h3>
+                <textarea id="notif-text" rows="3" placeholder="Сообщение участникам..."></textarea>
                 <button class="btn" onclick="sendNotification()">Отправить</button>
             </div>
 
@@ -359,15 +426,32 @@
         let currentPlayer = null;
         let currentGeofence = null;
         
-        // Карта OpenStreetMap (Бесплатная без ключей)
+        // Карта Игрока
         let map = L.map('map', { zoomControl: false }).setView([55.7558, 37.6173], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        // Карта Админа
+        let adminMap = null;
+        let adminMarkers = {};
 
         let userMarker = null;
         let geofenceCircle = null;
+
+        // Переключение тем
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            document.querySelector('.theme-btn').innerText = newTheme === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Загрузка темы из памяти
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            document.querySelector('.theme-btn').innerText = '☀️';
+        }
 
         function loginPlayer() {
             const name = document.getElementById('player-nickname').value.trim();
@@ -384,7 +468,9 @@
             const pass = prompt("🔐 Пароль администратора:");
             if (pass === ADMIN_PASSWORD) {
                 switchTab('admin-tab', btn);
+                initAdminMap();
                 listenToAlerts();
+                listenToAllPlayers();
             } else if(pass !== null) {
                 alert("❌ Неверный пароль!");
             }
@@ -396,9 +482,16 @@
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
             if (tabId === 'player-tab') setTimeout(() => map.invalidateSize(), 200);
+            if (tabId === 'admin-tab' && adminMap) setTimeout(() => adminMap.invalidateSize(), 200);
         }
 
-        // Вычисление расстояния в метрах (Гаверсинус)
+        function initAdminMap() {
+            if (!adminMap) {
+                adminMap = L.map('admin-map').setView([55.7558, 37.6173], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
+            }
+        }
+
         function getDistanceInMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -420,7 +513,6 @@
                     userMarker = L.marker([lat, lng]).addTo(map).bindPopup(currentPlayer).openPopup();
                     map.setView([lat, lng], 15);
 
-                    // Проверка выходам за пределы зоны
                     let isOut = false;
                     if (currentGeofence) {
                         const dist = getDistanceInMeters(lat, lng, currentGeofence.lat, currentGeofence.lng);
@@ -429,60 +521,128 @@
                             db.collection("alerts").doc(currentPlayer + "_geofence").set({
                                 player: currentPlayer,
                                 type: "OUT_OF_BOUNDS",
-                                lat: lat,
-                                lng: lng,
+                                lat: lat, lng: lng,
                                 time: new Date()
                             });
-                            alert("⚠️ Внимание! Вы вышли за границы игровой зоны!");
                         }
                     }
 
                     db.collection("players").doc(currentPlayer).set({
                         name: currentPlayer,
-                        lat: lat,
-                        lng: lng,
+                        lat: lat, lng: lng,
                         isOut: isOut,
                         updatedAt: new Date()
                     });
+                    alert("📍 Геолокация успешно отправлена!");
                 }, err => alert("Ошибка геолокации: " + err.message));
             }
         }
 
-        // Кнопка SOS
         function triggerSOS() {
             if (!currentPlayer) return alert("Сначала войдите!");
-            if (confirm("Вы уверены, что хотите отправить сигнал SOS администратору?")) {
+            if (confirm("Вызвать экстренную тревогу SOS?")) {
                 navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-
                     db.collection("alerts").doc(currentPlayer + "_sos").set({
                         player: currentPlayer,
                         type: "SOS",
-                        lat: lat,
-                        lng: lng,
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
                         time: new Date()
                     });
-                    alert("🚨 Сигнал SOS и ваши координаты отправлены организаторам!");
+                    alert("🚨 Сигнал SOS передан организаторам!");
                 });
             }
         }
 
-        // Подписка на геозону для игроков
+        // Live-отслеживание всех игроков для админа
+        function listenToAllPlayers() {
+            db.collection("players").onSnapshot(snapshot => {
+                if (!adminMap) return;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.lat && data.lng) {
+                        if (adminMarkers[data.name]) {
+                            adminMarkers[data.name].setLatLng([data.lat, data.lng]);
+                        } else {
+                            adminMarkers[data.name] = L.marker([data.lat, data.lng])
+                                .addTo(adminMap)
+                                .bindPopup(`<b>${data.name}</b><br>Статус: ${data.isOut ? '⚠️ Вне зоны' : '✅ В зоне'}`);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Запись голоса (Рация)
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        async function toggleRecording() {
+            const btn = document.getElementById('mic-btn');
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = async () => {
+                            const base64Audio = reader.result;
+                            await db.collection("game_state").doc("broadcast_audio").set({
+                                audioUrl: base64Audio,
+                                time: new Date()
+                            });
+                            alert("🎙️ Голосовое сообщение отправлено всем участникам!");
+                        };
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btn.classList.add('recording');
+                    btn.innerText = "🔴 Идет запись... Нажмите, чтобы остановить";
+                } catch (e) {
+                    alert("Не удалось получить доступ к микрофону: " + e.message);
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.classList.remove('recording');
+                btn.innerText = "🎤 Нажмите для записи голоса";
+            }
+        }
+
+        // Получение аудио-сообщений игроками
+        db.collection("game_state").doc("broadcast_audio").onSnapshot(doc => {
+            if (doc.exists && doc.data().audioUrl && currentPlayer) {
+                const data = doc.data();
+                const area = document.getElementById('notification-area');
+                area.innerHTML = `
+                    <div class="notification" style="background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.4); color: #7c3aed;">
+                        <strong>🎙️ Голосовое сообщение от Админа:</strong><br>
+                        <audio controls style="width: 100%; margin-top: 6px;" src="${data.audioUrl}"></audio>
+                    </div>`;
+            }
+        });
+
         db.collection("game_state").doc("geofence").onSnapshot(doc => {
             if (doc.exists) {
                 currentGeofence = doc.data();
                 if (geofenceCircle) map.removeLayer(geofenceCircle);
                 geofenceCircle = L.circle([currentGeofence.lat, currentGeofence.lng], {
                     radius: currentGeofence.radius,
-                    color: '#10b981',
-                    fillColor: '#10b981',
-                    fillOpacity: 0.15
+                    color: '#10b981', fillColor: '#10b981', fillOpacity: 0.15
                 }).addTo(map);
             }
         });
 
-        // Мониторинг тревог для админа
         function listenToAlerts() {
             db.collection("alerts").onSnapshot(snapshot => {
                 const container = document.getElementById('admin-alerts');
@@ -496,13 +656,13 @@
                     const timeStr = data.time ? new Date(data.time.toDate()).toLocaleTimeString() : '';
                     if (data.type === "SOS") {
                         container.innerHTML += `
-                            <div class="alert-box" style="background: #fef2f2; border-color: #fca5a5;">
+                            <div class="alert-box">
                                 <strong>🚨 СИГНАЛ SOS!</strong> Игрок: <b>${data.player}</b><br>
                                 Координаты: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)} [${timeStr}]
                             </div>`;
                     } else if (data.type === "OUT_OF_BOUNDS") {
                         container.innerHTML += `
-                            <div class="alert-box" style="background: #fffbebfb; border-color: #fde68a; color: #b45309;">
+                            <div class="alert-box" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #d97706;">
                                 <strong>⚠️ ВЫХОД ИЗ ЗОНЫ!</strong> Игрок <b>${data.player}</b> покинул геозону!<br>
                                 Координаты: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)} [${timeStr}]
                             </div>`;
@@ -512,7 +672,7 @@
         }
 
         db.collection("game_state").doc("notification").onSnapshot(doc => {
-            if (doc.exists && doc.data().message) {
+            if (doc.exists && doc.data().message && currentPlayer) {
                 document.getElementById('notification-area').innerHTML = 
                     `<div class="notification"><strong>📢 Оповещение:</strong> ${doc.data().message}</div>`;
             }
@@ -521,7 +681,7 @@
         function sendNotification() {
             const text = document.getElementById('notif-text').value;
             db.collection("game_state").doc("notification").set({ message: text });
-            alert("Отправлено!");
+            alert("Текстовое оповещение отправлено!");
         }
 
         function setGeofence() {
@@ -530,6 +690,7 @@
             const radius = parseFloat(document.getElementById('geo-radius').value);
 
             db.collection("game_state").doc("geofence").set({ lat, lng, radius });
+            if (adminMap) adminMap.setView([lat, lng], 14);
             alert("Геозона обновлена!");
         }
 
