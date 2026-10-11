@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eco Game — Геолокационная Игра</title>
+    <title>Eco Game — Telegram WebApp</title>
     
-    <!-- Подключаем шрифт Inter -->
+    <!-- Подключаем Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
@@ -50,14 +50,10 @@
             overflow: hidden;
             background-color: var(--bg);
             color: var(--text);
-        }
-
-        body {
             display: flex;
             flex-direction: column;
         }
 
-        /* Окно авторизации */
         #auth-screen {
             position: fixed;
             inset: 0;
@@ -80,7 +76,6 @@
             box-shadow: var(--shadow);
         }
 
-        /* Шапка */
         header {
             background: var(--surface);
             padding: 10px 16px;
@@ -117,7 +112,6 @@
             font-size: 14px;
         }
 
-        /* Вкладки */
         .tabs {
             display: flex;
             background: var(--border);
@@ -143,7 +137,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* Контент вкладки */
         .tab-content {
             display: none;
             flex: 1;
@@ -157,13 +150,12 @@
             flex-direction: column;
         }
 
-        #map {
+        #map, #admin-map {
             width: 100%;
             height: 100%;
             flex: 1;
         }
 
-        /* ИСПРАВЛЕННОЕ: Плавающая панель на карте (не перекрывает экран телефона) */
         .floating-panel {
             position: absolute;
             bottom: 16px;
@@ -183,19 +175,18 @@
             margin: 0 auto;
         }
 
-        /* ИСПРАВЛЕННОЕ: Админка с нормальной прокруткой */
         .admin-container {
             flex: 1;
             width: 100%;
             max-width: 600px;
             margin: 0 auto;
             padding: 16px;
-            overflow-y: auto; /* Включает прокрутку */
-            -webkit-overflow-scrolling: touch; /* Плавный скролл на iPhone/Android */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            padding-bottom: 40px; /* Чтобы нижняя карточка не прилипала к краю */
+            padding-bottom: 40px;
         }
 
         .card {
@@ -238,27 +229,13 @@
             font-weight: 600;
         }
 
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-sos {
-            background: var(--danger);
-        }
-
-        .btn-mic {
-            background: #8b5cf6;
-        }
-
-        .btn-mic.recording {
-            background: #ef4444;
-            animation: pulse 1.5s infinite;
-        }
+        .btn:active { transform: scale(0.98); }
+        .btn-sos { background: var(--danger); }
+        .btn-mic { background: #8b5cf6; }
+        .btn-mic.recording { background: #ef4444; animation: pulse 1.5s infinite; }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+            0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; }
         }
 
         #timer-display {
@@ -289,17 +266,16 @@
 </head>
 <body data-theme="light">
 
-    <!-- ВХОД -->
+    <!-- ОКНО ВХОДА (Пропускается, если открыто в Telegram) -->
     <div id="auth-screen">
         <div class="auth-card">
             <h2 style="font-size: 20px; margin-bottom: 6px;">🌱 Вход в Eco Game</h2>
-            <p style="color: var(--text-light); font-size: 13px; margin-bottom: 16px;">Введите ваш никнейм</p>
-            <input type="text" id="player-nickname" placeholder="Никнейм...">
-            <button class="btn" onclick="loginPlayer()">Войти в игру</button>
+            <p style="color: var(--text-light); font-size: 13px; margin-bottom: 16px;">Введите ваш никнейм для входа</p>
+            <input type="text" id="player-nickname" placeholder="Ваш никнейм...">
+            <button class="btn" onclick="manualLogin()">Войти в игру</button>
         </div>
     </div>
 
-    <!-- ШАПКА -->
     <header>
         <div class="brand">🌱 EcoGame</div>
         <div class="tabs">
@@ -312,7 +288,6 @@
         </div>
     </header>
 
-    <!-- ВКЛАДКА ИГРОКА -->
     <div id="player-tab" class="tab-content active">
         <div id="map"></div>
         <div class="floating-panel">
@@ -325,7 +300,6 @@
         </div>
     </div>
 
-    <!-- ВКЛАДКА АДМИНА -->
     <div id="admin-tab" class="tab-content">
         <div class="admin-container">
             <div class="card">
@@ -402,6 +376,34 @@
         let userMarker = null;
         let geofenceCircle = null;
 
+        // Автоматическая проверка: открыто ли в Telegram WebApp
+        window.addEventListener('DOMContentLoaded', () => {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand(); // Разворачиваем на весь экран в Telegram
+
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                // Берем имя или username из Telegram автоматически!
+                currentPlayer = user.first_name + (user.last_name ? ' ' + user.last_name : '') + (user.username ? ` (@${user.username})` : '');
+                
+                const badge = document.getElementById('user-badge');
+                badge.innerText = "👤 " + currentPlayer;
+                badge.style.display = "inline-block";
+                document.getElementById('auth-screen').style.display = 'none';
+            }
+        });
+
+        function manualLogin() {
+            const name = document.getElementById('player-nickname').value.trim();
+            if (!name) return alert("Введите имя!");
+            currentPlayer = name;
+            const badge = document.getElementById('user-badge');
+            badge.innerText = "👤 " + name;
+            badge.style.display = "inline-block";
+            document.getElementById('auth-screen').style.display = 'none';
+        }
+
         function toggleTheme() {
             const body = document.body;
             const current = body.getAttribute('data-theme');
@@ -414,16 +416,6 @@
         if (localStorage.getItem('theme') === 'dark') {
             document.body.setAttribute('data-theme', 'dark');
             document.querySelector('.theme-btn').innerText = '☀️';
-        }
-
-        function loginPlayer() {
-            const name = document.getElementById('player-nickname').value.trim();
-            if (!name) return alert("Введите имя!");
-            currentPlayer = name;
-            const badge = document.getElementById('user-badge');
-            badge.innerText = "👤 " + name;
-            badge.style.display = "inline-block";
-            document.getElementById('auth-screen').style.display = 'none';
         }
 
         function openAdminTab(btn) {
