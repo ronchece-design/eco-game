@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Eco Game — Геолокационная Игра</title>
     
     <!-- Подключаем шрифт Inter -->
@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Переменные тем оформления */
         :root {
             --primary: #10b981;
             --primary-hover: #059669;
@@ -25,7 +24,7 @@
             --text: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
-            --shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
         }
 
         [data-theme="dark"] {
@@ -34,7 +33,7 @@
             --text: #f8fafc;
             --text-light: #94a3b8;
             --border: #334155;
-            --shadow: 0 20px 25px -5px rgba(0,0,0,0.4);
+            --shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
         }
 
         * {
@@ -43,16 +42,19 @@
             padding: 0;
             font-family: 'Inter', system-ui, sans-serif;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            color: var(--text);
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         /* Окно авторизации */
@@ -76,74 +78,63 @@
             max-width: 400px;
             text-align: center;
             box-shadow: var(--shadow);
-            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         /* Шапка */
         header {
             background: var(--surface);
-            backdrop-filter: blur(10px);
-            padding: 12px 20px;
+            padding: 10px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border);
             z-index: 1000;
+            flex-shrink: 0;
         }
 
         .brand {
-            display: flex;
-            align-items: center;
-            gap: 8px;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
             color: var(--primary);
         }
 
         .header-controls {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        /* Кнопка смены темы */
         .theme-btn {
             background: var(--border);
             border: none;
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         /* Вкладки */
         .tabs {
             display: flex;
             background: var(--border);
-            padding: 4px;
-            border-radius: 12px;
-            gap: 4px;
+            padding: 3px;
+            border-radius: 10px;
+            gap: 2px;
         }
 
         .tab-btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border: none;
             background: transparent;
             color: var(--text-light);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
 
         .tab-btn.active {
@@ -152,11 +143,13 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* Контент */
+        /* Контент вкладки */
         .tab-content {
             display: none;
             flex: 1;
+            width: 100%;
             position: relative;
+            overflow: hidden;
         }
 
         .tab-content.active {
@@ -164,91 +157,85 @@
             flex-direction: column;
         }
 
-        #map, #admin-map {
+        #map {
             width: 100%;
             height: 100%;
+            flex: 1;
         }
 
-        /* Плавающая панель на карте */
+        /* ИСПРАВЛЕННОЕ: Плавающая панель на карте (не перекрывает экран телефона) */
         .floating-panel {
             position: absolute;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: calc(100% - 32px);
-            max-width: 480px;
+            bottom: 16px;
+            left: 12px;
+            right: 12px;
             z-index: 1000;
             background: var(--surface);
-            backdrop-filter: blur(16px);
-            padding: 20px;
-            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            padding: 14px;
+            border-radius: 16px;
             box-shadow: var(--shadow);
             border: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            max-width: 480px;
+            margin: 0 auto;
         }
 
-        /* Админка контейнер */
+        /* ИСПРАВЛЕННОЕ: Админка с нормальной прокруткой */
         .admin-container {
-            padding: 24px;
-            max-width: 680px;
-            margin: 0 auto;
+            flex: 1;
             width: 100%;
-            overflow-y: auto;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+            overflow-y: auto; /* Включает прокрутку */
+            -webkit-overflow-scrolling: touch; /* Плавный скролл на iPhone/Android */
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
+            padding-bottom: 40px; /* Чтобы нижняя карточка не прилипала к краю */
         }
 
         .card {
             background: var(--surface);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             border: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .card h3 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             color: var(--text);
         }
 
-        /* Формы и кнопки */
         input, textarea {
             width: 100%;
-            padding: 12px 16px;
-            margin: 6px 0 12px;
+            padding: 10px 14px;
+            margin: 4px 0 10px;
             border: 1px solid var(--border);
             background: var(--bg);
             color: var(--text);
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 14px;
             outline: none;
-        }
-
-        input:focus, textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
         }
 
         .btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
+            padding: 10px 16px;
+            border-radius: 8px;
             cursor: pointer;
             width: 100%;
             font-size: 14px;
             font-weight: 600;
-            transition: transform 0.1s;
-        }
-
-        .btn:hover {
-            background: var(--primary-hover);
         }
 
         .btn:active {
@@ -258,16 +245,11 @@
         .btn-sos {
             background: var(--danger);
         }
-        .btn-sos:hover {
-            background: var(--danger-hover);
-        }
 
         .btn-mic {
             background: #8b5cf6;
         }
-        .btn-mic:hover {
-            background: #7c3aed;
-        }
+
         .btn-mic.recording {
             background: #ef4444;
             animation: pulse 1.5s infinite;
@@ -280,37 +262,27 @@
         }
 
         #timer-display {
-            font-size: 32px;
+            font-size: 26px;
             font-weight: 700;
             color: #ef4444;
             text-align: center;
         }
 
-        .notification {
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            color: #d97706;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 13px;
-        }
-
-        .alert-box {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 13px;
+        .notification, .alert-box {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
             margin-bottom: 8px;
         }
+        .notification { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .alert-box { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
         #user-badge {
-            font-size: 13px;
+            font-size: 12px;
             background: var(--border);
             color: var(--text);
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            border-radius: 12px;
             font-weight: 500;
         }
     </style>
@@ -320,9 +292,9 @@
     <!-- ВХОД -->
     <div id="auth-screen">
         <div class="auth-card">
-            <h2 style="font-size: 22px; margin-bottom: 8px;">🌱 Вход в Eco Game</h2>
-            <p style="color: var(--text-light); font-size: 14px; margin-bottom: 20px;">Введите имя или никнейм для подключения</p>
-            <input type="text" id="player-nickname" placeholder="Ваш никнейм...">
+            <h2 style="font-size: 20px; margin-bottom: 6px;">🌱 Вход в Eco Game</h2>
+            <p style="color: var(--text-light); font-size: 13px; margin-bottom: 16px;">Введите ваш никнейм</p>
+            <input type="text" id="player-nickname" placeholder="Никнейм...">
             <button class="btn" onclick="loginPlayer()">Войти в игру</button>
         </div>
     </div>
@@ -336,7 +308,7 @@
         </div>
         <div class="header-controls">
             <span id="user-badge" style="display:none;"></span>
-            <button class="theme-btn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+            <button class="theme-btn" onclick="toggleTheme()">🌙</button>
         </div>
     </header>
 
@@ -346,7 +318,7 @@
         <div class="floating-panel">
             <div id="notification-area"></div>
             <div id="timer-display">00:00</div>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 8px;">
                 <button class="btn" onclick="updateLocation()">📍 Геолокация</button>
                 <button class="btn btn-sos" onclick="triggerSOS()">🚨 SOS</button>
             </div>
@@ -356,48 +328,44 @@
     <!-- ВКЛАДКА АДМИНА -->
     <div id="admin-tab" class="tab-content">
         <div class="admin-container">
-            <!-- ЖИВАЯ КАРТА УЧАСТНИКОВ ДЛЯ АДМИНА -->
             <div class="card">
                 <h3>🗺️ Live-карта участников</h3>
-                <div style="width: 100%; height: 300px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border);">
+                <div style="width: 100%; height: 250px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);">
                     <div id="admin-map" style="width:100%; height:100%;"></div>
                 </div>
             </div>
 
-            <!-- ДИСПЕТЧЕР ТРЕВОГ -->
             <div class="card" style="border-left: 4px solid var(--danger);">
-                <h3 style="color: var(--danger);">🚨 Тревоги и Нарушения Зоны</h3>
+                <h3 style="color: var(--danger);">🚨 Тревоги и Нарушения</h3>
                 <div id="admin-alerts">
-                    <p style="color: var(--text-light); font-size: 13px;">Активных тревог нет</p>
+                    <p style="color: var(--text-light); font-size: 12px;">Активных тревог нет</p>
                 </div>
             </div>
 
-            <!-- ГОЛОСОВАЯ РАЦИЯ АДМИНА -->
             <div class="card">
-                <h3>🎙️ Голосовая Рация (Микрофон)</h3>
-                <p style="color: var(--text-light); font-size: 13px; margin-bottom: 10px;">Запишите голосовое сообщение для всех участников игры:</p>
-                <button class="btn btn-mic" id="mic-btn" onclick="toggleRecording()">🎤 Нажмите для записи голоса</button>
+                <h3>🎙️ Голосовая Рация</h3>
+                <button class="btn btn-mic" id="mic-btn" onclick="toggleRecording()">🎤 Записать голос для всех</button>
             </div>
 
             <div class="card">
                 <h3>⏱️ Таймер Обратного Отсчета</h3>
-                <input type="number" id="timer-minutes" placeholder="Минуты" value="10">
+                <input type="number" id="timer-minutes" value="10">
                 <button class="btn" onclick="startTimer()">Запустить таймер</button>
             </div>
 
             <div class="card">
                 <h3>📢 Текстовое Оповещение</h3>
-                <textarea id="notif-text" rows="3" placeholder="Сообщение участникам..."></textarea>
+                <textarea id="notif-text" rows="2" placeholder="Сообщение..."></textarea>
                 <button class="btn" onclick="sendNotification()">Отправить</button>
             </div>
 
             <div class="card">
                 <h3>📍 Настройка Геозоны</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <input type="text" id="geo-lat" placeholder="Широта" value="55.7558">
-                    <input type="text" id="geo-lng" placeholder="Долгота" value="37.6173">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <input type="text" id="geo-lat" value="55.7558">
+                    <input type="text" id="geo-lng" value="37.6173">
                 </div>
-                <input type="number" id="geo-radius" placeholder="Радиус (метры)" value="500">
+                <input type="number" id="geo-radius" value="500">
                 <button class="btn" onclick="setGeofence()">Установить геозону</button>
             </div>
         </div>
@@ -426,28 +394,23 @@
         let currentPlayer = null;
         let currentGeofence = null;
         
-        // Карта Игрока
         let map = L.map('map', { zoomControl: false }).setView([55.7558, 37.6173], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        // Карта Админа
         let adminMap = null;
         let adminMarkers = {};
-
         let userMarker = null;
         let geofenceCircle = null;
 
-        // Переключение тем
         function toggleTheme() {
             const body = document.body;
-            const currentTheme = body.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            body.setAttribute('data-theme', newTheme);
-            document.querySelector('.theme-btn').innerText = newTheme === 'dark' ? '☀️' : '🌙';
-            localStorage.setItem('theme', newTheme);
+            const current = body.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', next);
+            document.querySelector('.theme-btn').innerText = next === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('theme', next);
         }
 
-        // Загрузка темы из памяти
         if (localStorage.getItem('theme') === 'dark') {
             document.body.setAttribute('data-theme', 'dark');
             document.querySelector('.theme-btn').innerText = '☀️';
@@ -455,8 +418,7 @@
 
         function loginPlayer() {
             const name = document.getElementById('player-nickname').value.trim();
-            if (!name) return alert("Введите ваше имя!");
-            
+            if (!name) return alert("Введите имя!");
             currentPlayer = name;
             const badge = document.getElementById('user-badge');
             badge.innerText = "👤 " + name;
@@ -465,7 +427,7 @@
         }
 
         function openAdminTab(btn) {
-            const pass = prompt("🔐 Пароль администратора:");
+            const pass = prompt("🔐 Пароль админа:");
             if (pass === ADMIN_PASSWORD) {
                 switchTab('admin-tab', btn);
                 initAdminMap();
@@ -481,8 +443,8 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
-            if (tabId === 'player-tab') setTimeout(() => map.invalidateSize(), 200);
-            if (tabId === 'admin-tab' && adminMap) setTimeout(() => adminMap.invalidateSize(), 200);
+            if (tabId === 'player-tab') setTimeout(() => map.invalidateSize(), 150);
+            if (tabId === 'admin-tab' && adminMap) setTimeout(() => adminMap.invalidateSize(), 150);
         }
 
         function initAdminMap() {
@@ -504,57 +466,44 @@
 
         function updateLocation() {
             if (!currentPlayer) return alert("Сначала войдите!");
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
 
-                    if (userMarker) map.removeLayer(userMarker);
-                    userMarker = L.marker([lat, lng]).addTo(map).bindPopup(currentPlayer).openPopup();
-                    map.setView([lat, lng], 15);
+                if (userMarker) map.removeLayer(userMarker);
+                userMarker = L.marker([lat, lng]).addTo(map).bindPopup(currentPlayer).openPopup();
+                map.setView([lat, lng], 15);
 
-                    let isOut = false;
-                    if (currentGeofence) {
-                        const dist = getDistanceInMeters(lat, lng, currentGeofence.lat, currentGeofence.lng);
-                        if (dist > currentGeofence.radius) {
-                            isOut = true;
-                            db.collection("alerts").doc(currentPlayer + "_geofence").set({
-                                player: currentPlayer,
-                                type: "OUT_OF_BOUNDS",
-                                lat: lat, lng: lng,
-                                time: new Date()
-                            });
-                        }
+                let isOut = false;
+                if (currentGeofence) {
+                    const dist = getDistanceInMeters(lat, lng, currentGeofence.lat, currentGeofence.lng);
+                    if (dist > currentGeofence.radius) {
+                        isOut = true;
+                        db.collection("alerts").doc(currentPlayer + "_geofence").set({
+                            player: currentPlayer, type: "OUT_OF_BOUNDS", lat, lng, time: new Date()
+                        });
                     }
+                }
 
-                    db.collection("players").doc(currentPlayer).set({
-                        name: currentPlayer,
-                        lat: lat, lng: lng,
-                        isOut: isOut,
-                        updatedAt: new Date()
-                    });
-                    alert("📍 Геолокация успешно отправлена!");
-                }, err => alert("Ошибка геолокации: " + err.message));
-            }
+                db.collection("players").doc(currentPlayer).set({
+                    name: currentPlayer, lat, lng, isOut, updatedAt: new Date()
+                });
+                alert("📍 Геолокация отправлена!");
+            }, err => alert("Ошибка: " + err.message));
         }
 
         function triggerSOS() {
             if (!currentPlayer) return alert("Сначала войдите!");
-            if (confirm("Вызвать экстренную тревогу SOS?")) {
+            if (confirm("Вызвать тревогу SOS?")) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     db.collection("alerts").doc(currentPlayer + "_sos").set({
-                        player: currentPlayer,
-                        type: "SOS",
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
-                        time: new Date()
+                        player: currentPlayer, type: "SOS", lat: pos.coords.latitude, lng: pos.coords.longitude, time: new Date()
                     });
-                    alert("🚨 Сигнал SOS передан организаторам!");
+                    alert("🚨 SOS отправлен!");
                 });
             }
         }
 
-        // Live-отслеживание всех игроков для админа
         function listenToAllPlayers() {
             db.collection("players").onSnapshot(snapshot => {
                 if (!adminMap) return;
@@ -566,18 +515,14 @@
                         } else {
                             adminMarkers[data.name] = L.marker([data.lat, data.lng])
                                 .addTo(adminMap)
-                                .bindPopup(`<b>${data.name}</b><br>Статус: ${data.isOut ? '⚠️ Вне зоны' : '✅ В зоне'}`);
+                                .bindPopup(`<b>${data.name}</b>`);
                         }
                     }
                 });
             });
         }
 
-        // Запись голоса (Рация)
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-
+        let mediaRecorder, audioChunks = [], isRecording = false;
         async function toggleRecording() {
             const btn = document.getElementById('mic-btn');
             if (!isRecording) {
@@ -585,49 +530,39 @@
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
-
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
-
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                     mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
                         const reader = new FileReader();
-                        reader.readAsDataURL(audioBlob);
+                        reader.readAsDataURL(blob);
                         reader.onloadend = async () => {
-                            const base64Audio = reader.result;
                             await db.collection("game_state").doc("broadcast_audio").set({
-                                audioUrl: base64Audio,
-                                time: new Date()
+                                audioUrl: reader.result, time: new Date()
                             });
-                            alert("🎙️ Голосовое сообщение отправлено всем участникам!");
+                            alert("🎙️ Голосовое отправлено!");
                         };
                     };
-
                     mediaRecorder.start();
                     isRecording = true;
                     btn.classList.add('recording');
-                    btn.innerText = "🔴 Идет запись... Нажмите, чтобы остановить";
-                } catch (e) {
-                    alert("Не удалось получить доступ к микрофону: " + e.message);
+                    btn.innerText = "🔴 Запись... (Нажмите для стопа)";
+                } catch(e) {
+                    alert("Нет доступа к микрофону");
                 }
             } else {
                 mediaRecorder.stop();
                 isRecording = false;
                 btn.classList.remove('recording');
-                btn.innerText = "🎤 Нажмите для записи голоса";
+                btn.innerText = "🎤 Записать голос для всех";
             }
         }
 
-        // Получение аудио-сообщений игроками
         db.collection("game_state").doc("broadcast_audio").onSnapshot(doc => {
             if (doc.exists && doc.data().audioUrl && currentPlayer) {
-                const data = doc.data();
-                const area = document.getElementById('notification-area');
-                area.innerHTML = `
-                    <div class="notification" style="background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.4); color: #7c3aed;">
-                        <strong>🎙️ Голосовое сообщение от Админа:</strong><br>
-                        <audio controls style="width: 100%; margin-top: 6px;" src="${data.audioUrl}"></audio>
+                document.getElementById('notification-area').innerHTML = `
+                    <div class="notification" style="background: rgba(139, 92, 246, 0.15); color: #7c3aed;">
+                        <strong>🎙️ Голосовое от Админа:</strong><br>
+                        <audio controls style="width:100%; margin-top:4px;" src="${doc.data().audioUrl}"></audio>
                     </div>`;
             }
         });
@@ -637,8 +572,7 @@
                 currentGeofence = doc.data();
                 if (geofenceCircle) map.removeLayer(geofenceCircle);
                 geofenceCircle = L.circle([currentGeofence.lat, currentGeofence.lng], {
-                    radius: currentGeofence.radius,
-                    color: '#10b981', fillColor: '#10b981', fillOpacity: 0.15
+                    radius: currentGeofence.radius, color: '#10b981', fillOpacity: 0.15
                 }).addTo(map);
             }
         });
@@ -648,24 +582,15 @@
                 const container = document.getElementById('admin-alerts');
                 container.innerHTML = "";
                 if (snapshot.empty) {
-                    container.innerHTML = `<p style="color: var(--text-light); font-size: 13px;">Активных тревог нет</p>`;
+                    container.innerHTML = `<p style="color: var(--text-light); font-size: 12px;">Активных тревог нет</p>`;
                     return;
                 }
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const timeStr = data.time ? new Date(data.time.toDate()).toLocaleTimeString() : '';
                     if (data.type === "SOS") {
-                        container.innerHTML += `
-                            <div class="alert-box">
-                                <strong>🚨 СИГНАЛ SOS!</strong> Игрок: <b>${data.player}</b><br>
-                                Координаты: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)} [${timeStr}]
-                            </div>`;
-                    } else if (data.type === "OUT_OF_BOUNDS") {
-                        container.innerHTML += `
-                            <div class="alert-box" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #d97706;">
-                                <strong>⚠️ ВЫХОД ИЗ ЗОНЫ!</strong> Игрок <b>${data.player}</b> покинул геозону!<br>
-                                Координаты: ${data.lat.toFixed(5)}, ${data.lng.toFixed(5)} [${timeStr}]
-                            </div>`;
+                        container.innerHTML += `<div class="alert-box"><strong>🚨 SOS!</strong> Игрок: <b>${data.player}</b></div>`;
+                    } else {
+                        container.innerHTML += `<div class="alert-box" style="background: rgba(245, 158, 11, 0.1); color: #d97706;"><strong>⚠️ ВНЕ ЗОНЫ!</strong> Игрок: <b>${data.player}</b></div>`;
                     }
                 });
             });
@@ -673,22 +598,20 @@
 
         db.collection("game_state").doc("notification").onSnapshot(doc => {
             if (doc.exists && doc.data().message && currentPlayer) {
-                document.getElementById('notification-area').innerHTML = 
-                    `<div class="notification"><strong>📢 Оповещение:</strong> ${doc.data().message}</div>`;
+                document.getElementById('notification-area').innerHTML = `<div class="notification"><strong>📢 Оповещение:</strong> ${doc.data().message}</div>`;
             }
         });
 
         function sendNotification() {
             const text = document.getElementById('notif-text').value;
             db.collection("game_state").doc("notification").set({ message: text });
-            alert("Текстовое оповещение отправлено!");
+            alert("Отправлено!");
         }
 
         function setGeofence() {
             const lat = parseFloat(document.getElementById('geo-lat').value);
             const lng = parseFloat(document.getElementById('geo-lng').value);
             const radius = parseFloat(document.getElementById('geo-radius').value);
-
             db.collection("game_state").doc("geofence").set({ lat, lng, radius });
             if (adminMap) adminMap.setView([lat, lng], 14);
             alert("Геозона обновлена!");
@@ -697,13 +620,10 @@
         function startTimer() {
             let minutes = parseInt(document.getElementById('timer-minutes').value);
             let seconds = minutes * 60;
-
             const interval = setInterval(() => {
                 let m = Math.floor(seconds / 60);
                 let s = seconds % 60;
-                document.getElementById('timer-display').innerText = 
-                    `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-                
+                document.getElementById('timer-display').innerText = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
                 if (seconds <= 0) clearInterval(interval);
                 seconds--;
             }, 1000);
