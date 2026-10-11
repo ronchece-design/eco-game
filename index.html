@@ -1,1 +1,284 @@
-index.html [generated with web_code_canvas tool]
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Game - Геолокационная Игра</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: #2e7d32;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .tabs {
+            display: flex;
+            background: #1b5e20;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #4caf50;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            position: relative;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #1b5e20;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #timer-display {
+            font-size: 28px;
+            font-weight: bold;
+            color: #d32f2f;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .notification {
+            background: #ffe0b2;
+            border-left: 5px solid #fb8c00;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌱 Eco Game</h1>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('player-tab', this)">🎮 Игрок</button>
+        <button class="tab-btn" onclick="switchTab('admin-tab', this)">⚙️ Админка</button>
+    </div>
+
+    <!-- Вкладка Игрока -->
+    <div id="player-tab" class="tab-content active">
+        <div id="map"></div>
+        <div style="position: absolute; bottom: 20px; left: 10px; right: 10px; z-index: 1000; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 10px;">
+            <div id="notification-area"></div>
+            <div id="timer-display">00:00</div>
+            <button class="btn" onclick="updateLocation()">📍 Обновить моё местоположение</button>
+        </div>
+    </div>
+
+    <!-- Вкладка Администратора -->
+    <div id="admin-tab" class="tab-content">
+        <div class="container">
+            <div class="card">
+                <h3>⏱️ Таймер Обратного Отсчета</h3>
+                <input type="number" id="timer-minutes" placeholder="Минуты" value="10">
+                <button class="btn" onclick="startTimer()">Запустить таймер</button>
+            </div>
+
+            <div class="card">
+                <h3>📢 Массовое Оповещение</h3>
+                <textarea id="notif-text" placeholder="Введите сообщение всем участникам..."></textarea>
+                <button class="btn" onclick="sendNotification()">Отправить оповещение</button>
+            </div>
+
+            <div class="card">
+                <h3>📍 Настройка Геозоны (Центр и Радиус)</h3>
+                <input type="text" id="geo-lat" placeholder="Широта (Lat)" value="55.7558">
+                <input type="text" id="geo-lng" placeholder="Долгота (Lng)" value="37.6173">
+                <input type="number" id="geo-radius" placeholder="Радиус (метры)" value="500">
+                <button class="btn" onclick="setGeofence()">Установить геозону</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Инициализация Firebase с твоими ключами
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbAVbQQ0MUuhSRdHYvTiJrwXYl-YcQRQ4",
+            authDomain: "ecogame-db766.firebaseapp.com",
+            projectId: "ecogame-db766",
+            storageBucket: "ecogame-db766.firebasestorage.app",
+            messagingSenderId: "940653641745",
+            appId: "1:940653641745:web:4efff91a64ef0b3e18f1b0",
+            measurementId: "G-TRRX587WQF"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Карта Leaflet
+        let map = L.map('map').setView([55.7558, 37.6173], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let userMarker = null;
+        let geofenceCircle = null;
+
+        // Переключение вкладок
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+            if (tabId === 'player-tab') setTimeout(() => map.invalidateSize(), 200);
+        }
+
+        // Обновление локации игрока
+        function updateLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+
+                    if (userMarker) map.removeLayer(userMarker);
+                    userMarker = L.marker([lat, lng]).addTo(map).bindPopup("Вы здесь!").openPopup();
+                    map.setView([lat, lng], 15);
+
+                    // Сохраняем в Firebase
+                    db.collection("players").doc("user_1").set({
+                        lat: lat,
+                        lng: lng,
+                        updatedAt: new Date()
+                    });
+                }, err => alert("Ошибка геолокации: " + err.message));
+            } else {
+                alert("Геолокация не поддерживается вашим браузером");
+            }
+        }
+
+        // Подписка на уведомления в реальном времени
+        db.collection("game_state").doc("notification").onSnapshot(doc => {
+            if (doc.exists && doc.data().message) {
+                document.getElementById('notification-area').innerHTML = 
+                    `<div class="notification"><strong>📢 Оповещение:</strong> ${doc.data().message}</div>`;
+            }
+        });
+
+        // Админ-функции
+        function sendNotification() {
+            const text = document.getElementById('notif-text').value;
+            db.collection("game_state").doc("notification").set({ message: text });
+            alert("Оповещение отправлено!");
+        }
+
+        function setGeofence() {
+            const lat = parseFloat(document.getElementById('geo-lat').value);
+            const lng = parseFloat(document.getElementById('geo-lng').value);
+            const radius = parseFloat(document.getElementById('geo-radius').value);
+
+            if (geofenceCircle) map.removeLayer(geofenceCircle);
+            geofenceCircle = L.circle([lat, lng], { radius: radius, color: 'green', fillColor: '#2e7d32', fillOpacity: 0.2 }).addTo(map);
+            map.setView([lat, lng], 14);
+
+            db.collection("game_state").doc("geofence").set({ lat, lng, radius });
+            alert("Геозона обновлена!");
+        }
+
+        function startTimer() {
+            let minutes = parseInt(document.getElementById('timer-minutes').value);
+            let seconds = minutes * 60;
+
+            const interval = setInterval(() => {
+                let m = Math.floor(seconds / 60);
+                let s = seconds % 60;
+                document.getElementById('timer-display').innerText = 
+                    `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+                
+                if (seconds <= 0) clearInterval(interval);
+                seconds--;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
